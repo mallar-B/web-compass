@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal Compass</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .compass-container {
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .compass-circle {
+            width: 250px;
+            height: 250px;
+            border: 3px solid #00ff88;
+            border-radius: 50%;
+            position: relative;
+            background: radial-gradient(circle, rgba(0,255,136,0.1) 0%, transparent 70%);
+            transition: transform 0.3s ease;
+        }
+
+        .compass-needle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 100px;
+            background: linear-gradient(to top, #ff4444 0%, #ff4444 50%, #00ff88 50%, #00ff88 100%);
+            transform-origin: bottom center;
+            transform: translate(-50%, -100%);
+            border-radius: 2px;
+        }
+
+        .compass-directions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px;
+            height: 280px;
+        }
+
+        .direction {
+            position: absolute;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .direction.n { top: 5px; left: 50%; transform: translateX(-50%); }
+        .direction.s { bottom: 5px; left: 50%; transform: translateX(-50%); }
+        .direction.e { right: 5px; top: 50%; transform: translateY(-50%); }
+        .direction.w { left: 5px; top: 50%; transform: translateY(-50%); }
+
+        .info-panel {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            min-width: 300px;
+            text-align: center;
+        }
+
+        .deg {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background: #00ff88;
+            color: #1a1a1a;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #00dd77;
+        }
+
+        .toggle {
+            background: #444;
+            color: white;
+            position: relative;
+        }
+
+        .toggle.toggle-on {
+            background: #00ff88;
+            color: #1a1a1a;
+        }
+
+        .location-info {
+            display: none;
+            text-align: left;
+            margin-top: 10px;
+        }
+
+        .location-info.show {
+            display: block;
+        }
+
+        .location-info div {
+            margin: 5px 0;
+        }
+
+        #lock_location {
+            background: #666;
+        }
+
+        #lock_location.active {
+            background: #ff6666;
+        }
+
+        .error {
+            color: #ff6666;
+            text-align: center;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Compass test</h1>
+    <div class="compass-container">
+        <div class="compass-circle">
+            <div class="compass-needle"></div>
+        </div>
+        <div class="compass-directions">
+            <div class="direction n">N</div>
+            <div class="direction s">S</div>
+            <div class="direction e">E</div>
+            <div class="direction w">W</div>
+        </div>
+    </div>
+
+    <div class="info-panel">
+        <div class="deg">
+            <span>Tap "Start Compass" to begin</span>
+        </div>
+
+        <div class="controls">
+            <button class="start-btn">Start Compass</button>
+            <button class="toggle" id="location-toggle">Show Location</button>
+            <button id="lock_location">🔓 Lock Direction</button>
+            <button id="share_location">Share</button>
+        </div>
+
+        <div class="location-info" id="location-info">
+            <div class="latitude">Latitude: <span></span></div>
+            <div class="longitude">Longitude: <span></span></div>
+            <div class="sunrise">Sunrise: <span></span></div>
+            <div class="sunset">Sunset: <span></span></div>
+            <div class="location">Location: <span></span></div>
+            <div class="sea_level">Altitude: <span></span></div>
+        </div>
+    </div>
+
+    <div class="error" id="error-message"></div>
+
+    <script>
+        const compassCircle = document.querySelector(".compass-circle");
+        const degElement = document.querySelector(".deg span");
+        const errorElement = document.getElementById("error-message");
+        let compass = 0;
+        let isLocked = false;
+
+        const isIOS = navigator.userAgent.match(/(iPod|iPhone|iPad)/) && navigator.userAgent.match(/AppleWebKit/);
+
+        function getDirection(compass) {
+            if (compass >= 337.5 || compass < 22.5) return "N";
+            else if (compass >= 22.5 && compass < 67.5) return "NE";
+            else if (compass >= 67.5 && compass < 112.5) return "E";
+            else if (compass >= 112.5 && compass < 157.5) return "SE";
+            else if (compass >= 157.5 && compass < 202.5) return "S";
+            else if (compass >= 202.5 && compass < 247.5) return "SW";
+            else if (compass >= 247.5 && compass < 292.5) return "W";
+            else if (compass >= 292.5 && compass < 337.5) return "NW";
+            else return "N";
+        }
+
+        function handler(e) {
+            let rawCompass = 0;
+
+            if (e.webkitCompassHeading) {
+                // iOS - webkitCompassHeading gives us the correct heading
+                rawCompass = e.webkitCompassHeading;
+            } else if (e.alpha !== null) {
+                // Android and others - alpha needs to be converted
+                rawCompass = e.alpha;
+            }
+
+            // Normalize to 0-360 range
+            compass = ((rawCompass % 360) + 360) % 360;
+
+            if (!isLocked) {
+                const direction = getDirection(compass);
+                degElement.innerText = `${direction} ${Math.round(compass * 100)/100}°`;
+
+						document.querySelector(".compass-needle").style.transform = `translate(-50%, -100%) rotate(${compass}deg)`;
+
+            }
+        }
+
+        function startCompass() {
+            if (isIOS) {
+                DeviceOrientationEvent.requestPermission()
+                    .then((response) => {
+                        if (response === "granted") {
+                            window.addEventListener("deviceorientation", handler, true);
+                            degElement.innerText = "Compass active";
+                        } else {
+                            showError("Permission denied for device orientation");
+                        }
+                    })
+                    .catch(() => showError("Device orientation not supported"));
+            } else {
+                // Try absolute first, fallback to regular deviceorientation
+                if ('ondeviceorientationabsolute' in window) {
+                    window.addEventListener("deviceorientationabsolute", handler, true);
+                } else {
+                    window.addEventListener("deviceorientation", handler, true);
+                }
+                degElement.innerText = "Compass active";
+            }
+        }
+
+        function showError(message) {
+            errorElement.textContent = message;
+            setTimeout(() => errorElement.textContent = "", 5000);
+        }
+
+        function showPosition(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            document.querySelector(".latitude span").innerText = latitude.toFixed(6);
+            document.querySelector(".longitude span").innerText = longitude.toFixed(6);
+
+            // Get sunrise/sunset data
+            fetch(`https://api.sunrise-sunset.org/json?lat=${latitude}&lng=${longitude}&formatted=0`)
+                .then(response => response.json())
+                .then(data => {
+                    const sunrise = new Date(data.results.sunrise);
+                    const sunset = new Date(data.results.sunset);
+                    document.querySelector('.sunrise span').innerText = sunrise.toLocaleTimeString();
+                    document.querySelector('.sunset span').innerText = sunset.toLocaleTimeString();
+                })
+                .catch(err => console.error('Sunrise/sunset error:', err));
+
+            // Mock altitude and location (since the original API might not be accessible)
+            document.querySelector(".sea_level span").innerText = "Loading...";
+            document.querySelector(".location span").innerText = "Loading...";
+        }
+
+        function showLocationError(error) {
+            let message = "";
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    message = "Location access denied";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    message = "Location information unavailable";
+                    break;
+                case error.TIMEOUT:
+                    message = "Location request timeout";
+                    break;
+            }
+            showError(message);
+        }
+
+        // Event listeners
+        document.querySelector(".start-btn").addEventListener("click", startCompass);
+
+        document.getElementById("location-toggle").addEventListener("click", function() {
+            this.classList.toggle("toggle-on");
+            const locationInfo = document.getElementById("location-info");
+
+            if (this.classList.contains("toggle-on")) {
+                navigator.geolocation.getCurrentPosition(showPosition, showLocationError);
+                locationInfo.classList.add("show");
+                this.textContent = "Hide Location";
+            } else {
+                locationInfo.classList.remove("show");
+                this.textContent = "Show Location";
+            }
+        });
+
+        document.getElementById("lock_location").addEventListener("click", function() {
+            isLocked = !isLocked;
+            this.classList.toggle("active");
+            this.textContent = isLocked ? "🔒 Unlock Direction" : "🔓 Lock Direction";
+        });
+
+        document.getElementById("share_location").addEventListener("click", function() {
+            const locationToggle = document.getElementById("location-toggle");
+            let shareText = "";
+
+            if (locationToggle.classList.contains("toggle-on")) {
+                const lat = document.querySelector(".latitude span").innerText;
+                const lng = document.querySelector(".longitude span").innerText;
+                const sunrise = document.querySelector(".sunrise span").innerText;
+                const sunset = document.querySelector(".sunset span").innerText;
+                const location = document.querySelector(".location span").innerText;
+                const altitude = document.querySelector(".sea_level span").innerText;
+
+                shareText = `Latitude: ${lat}\nLongitude: ${lng}\nSunrise: ${sunrise}\nSunset: ${sunset}\nLocation: ${location}\nAltitude: ${altitude}`;
+
+                if (isLocked) {
+                    shareText += `\nDirection: ${degElement.innerText}`;
+                }
+            } else if (isLocked) {
+                shareText = `Direction: ${degElement.innerText}`;
+            } else {
+                shareText = "Check out this compass app!";
+            }
+
+            if ('share' in navigator) {
+                navigator.share({
+                    title: "Compass Reading",
+                    text: shareText
+                }).catch(console.error);
+            } else {
+                // Fallback - copy to clipboard
+                navigator.clipboard.writeText(shareText).then(() => {
+                    showError("Copied to clipboard!");
+                }).catch(() => {
+                    alert(shareText);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
