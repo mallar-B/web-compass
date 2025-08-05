@@ -218,13 +218,14 @@
 
         function handler(e) {
             let rawCompass = 0;
+            let circleRotateDeg = 0;
 
             if (e.webkitCompassHeading) {
                 // iOS - webkitCompassHeading gives us the correct heading
                 rawCompass = e.webkitCompassHeading;
             } else if (e.alpha !== null) {
                 // Android and others - alpha needs to be converted
-                rawCompass = e.alpha;
+                rawCompass = 360 - e.alpha;
             }
 
             // Normalize to 0-360 range
@@ -232,11 +233,10 @@
 
             if (!isLocked) {
                 const direction = getDirection(compass);
+                circleRotateDeg = 360 - compass;
                 degElement.innerText = `${direction} ${Math.round(compass * 100)/100}°`;
-
-						// document.querySelector(".compass-needle").style.transform = `translate(-50%, -100%) rotate(${compass}deg)`;
-            document.querySelector(".compass-directions").style.transform = `translate(-50%, -50%) rotate(${compass}deg)`
-
+                // document.querySelector(".compass-needle").style.transform = `translate(-50%, -100%) rotate(${compass}deg)`;
+                document.querySelector(".compass-directions").style.transform = `translate(-50%, -50%) rotate(${circleRotateDeg}deg)`
             }
         }
 
