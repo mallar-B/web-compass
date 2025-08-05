@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minimal Compass</title>
+    <title>Compass Test</title>
     <style>
         * {
             margin: 0;
@@ -39,11 +39,14 @@
 
         .compass-needle {
             position: absolute;
-            top: 50%;
+            top: -10%;
             left: 50%;
-            width: 4px;
-            height: 100px;
-            background: linear-gradient(to top, #ff4444 0%, #ff4444 50%, #00ff88 50%, #00ff88 100%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 15px solid red;
+            margin: 20px auto;
             transform-origin: bottom center;
             transform: translate(-50%, -100%);
             border-radius: 2px;
@@ -81,8 +84,11 @@
         .deg {
             font-size: 24px;
             font-weight: bold;
+            position: absolute;
             color: #00ff88;
-            margin-bottom: 10px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
         }
 
         .controls {
@@ -153,6 +159,9 @@
     <div class="compass-container">
         <div class="compass-circle">
             <div class="compass-needle"></div>
+            <div class="deg">
+                <span></span>
+            </div>
         </div>
         <div class="compass-directions">
             <div class="direction n">N</div>
@@ -163,7 +172,7 @@
     </div>
 
     <div class="info-panel">
-        <div class="deg">
+        <div>
             <span>Tap "Start Compass" to begin</span>
         </div>
 
@@ -225,7 +234,8 @@
                 const direction = getDirection(compass);
                 degElement.innerText = `${direction} ${Math.round(compass * 100)/100}°`;
 
-						document.querySelector(".compass-needle").style.transform = `translate(-50%, -100%) rotate(${compass}deg)`;
+						// document.querySelector(".compass-needle").style.transform = `translate(-50%, -100%) rotate(${compass}deg)`;
+            document.querySelector(".compass-directions").style.transform = `translate(-50%, -50%) rotate(${compass}deg)`
 
             }
         }
